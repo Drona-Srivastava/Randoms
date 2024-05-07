@@ -4,6 +4,7 @@
 int main()
 {
     int num, *arr, i;
+    printf("SUPP");
     scanf("%d", &num);
     arr = (int*) malloc(num * sizeof(int));
     for(i = 0; i < num; i++) {
