@@ -1,81 +1,90 @@
 #include <stdio.h>
 
-struct Process {
-    int id;             
-    int burst_time;    
-    int waiting_time;  
-    int turn_around_time; 
-    int remaining_time; 
+struct process {
+    int pid;
+    int burst;
+    int wait;
+    int turn;
+    int remaining;
+    int completion;
 };
 
-void findWaitingTime(struct Process proc[], int n, int quantum) {
-    int t = 0;
-    while (1) {
-        int done = 1;
+void calc(struct process proc[], int n, int q) {
+    int time = 0;
+    int completed = 0;
+
+    // Run the processes in round robin fashion
+    while (completed != n) {
         for (int i = 0; i < n; i++) {
-            if (proc[i].remaining_time > 0) {
-                done = 0;
-                if (proc[i].remaining_time > quantum) {
-                    t += quantum;
-                    proc[i].remaining_time -= quantum;
-                } 
-                else {
-                    t += proc[i].remaining_time;
-                    proc[i].waiting_time = t - proc[i].burst_time;
-                    proc[i].remaining_time = 0;
+            if (proc[i].remaining > 0) {
+                if (proc[i].remaining > q) {
+                    time += q;
+                    proc[i].remaining -= q;
+                } else {
+                    time += proc[i].remaining;
+                    proc[i].wait = time - proc[i].burst;
+                    proc[i].remaining = 0;
+                    proc[i].completion = time;
+                    completed++;
                 }
             }
         }
-        if (done == 1) {
-            break;
-        }
+    }
+
+    // Calculate turn-around time (turn = burst + wait)
+    for (int i = 0; i < n; i++) {
+        proc[i].turn = proc[i].burst + proc[i].wait;
     }
 }
 
-void findTurnAroundTime(struct Process proc[], int n) {
+void table(struct process proc[], int n) {
+    int totalwait = 0, totalturn = 0;
+
+    // Calculate total wait and total turn-around times
     for (int i = 0; i < n; i++) {
-        proc[i].turn_around_time = proc[i].burst_time + proc[i].waiting_time;
-    }
-}
-
-void findAverageTime(struct Process proc[], int n, int quantum) {
-    int total_wt = 0, total_tat = 0;
-
-    findWaitingTime(proc, n, quantum);
-
-    findTurnAroundTime(proc, n);
-
-    printf("Processes\tBurst Time\tWaiting Time\tTurn-Around Time\n");
-    for (int i = 0; i < n; i++) {
-        total_wt += proc[i].waiting_time;
-        total_tat += proc[i].turn_around_time;
-        printf("%d\t\t%d\t\t%d\t\t%d\n", proc[i].id, proc[i].burst_time, proc[i].waiting_time, proc[i].turn_around_time);
+        totalwait += proc[i].wait;
+        totalturn += proc[i].turn;
     }
 
-    printf("Average Waiting Time = %.2f\n", (float)total_wt / (float)n);
-    printf("Average Turnaround Time = %.2f\n", (float)total_tat / (float)n);
+    // Calculate average wait and turn-around times
+    int avgwait = totalwait / n;
+    int avgturn = totalturn / n;
+
+    // Print average wait and turn-around times
+    printf("Average waiting time: %d\n", avgwait);
+    printf("Average turn-around time: %d\n", avgturn);
+
+    // Print process table
+    printf("PID\tBurst\tCompletion\tWait\tTurnaround\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\t\t%d\t\t%d\n", proc[i].pid, proc[i].burst, proc[i].completion, proc[i].wait, proc[i].turn);
+    }
 }
 
 int main() {
-    int n; 
-    int quantum;
-
+    int n;
     printf("Enter the number of processes: ");
     scanf("%d", &n);
 
-    struct Process proc[n]; 
+    struct process proc[n];
 
+    // Input burst times for each process
     for (int i = 0; i < n; i++) {
-        proc[i].id = i + 1;
+        proc[i].pid = i + 1;
         printf("Enter burst time for process %d: ", i + 1);
-        scanf("%d", &proc[i].burst_time);
-        proc[i].remaining_time = proc[i].burst_time;
+        scanf("%d", &proc[i].burst);
+        proc[i].remaining = proc[i].burst;  // Initialize remaining time to burst time
     }
 
-    printf("Enter the time quantum: ");
-    scanf("%d", &quantum);
+    int q;
+    printf("Enter the quantum time: ");
+    scanf("%d", &q);
 
-    findAverageTime(proc, n, quantum);
+    // Calculate scheduling details
+    calc(proc, n, q);
+
+    // Display process table with results
+    table(proc, n);
 
     return 0;
 }

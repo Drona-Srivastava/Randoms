@@ -1,48 +1,60 @@
 #include <stdio.h>
 
-struct Process {
+struct process{
     int pid;
-    int arrival_time;
-    int burst_time;
-    int completion_time;
-    int waiting_time;
-    int turnaround_time;
-    int is_completed;
+    int arrival;
+    int burst;
+    int completion;
+    int wait;
+    int turnaround;
+    int is_done;
 };
 
-void calculate_times(struct Process proc[], int n) {
-    int time = 0, completed = 0, min_index;
-    
-    while (completed != n) {
-        min_index = -1;
-        int min_burst_time = 100000;
+void calc(struct process proc[],int n){
+    int time=0, completed=0,min_index;
 
-        for (int i = 0; i < n; i++) {
-            if (proc[i].arrival_time <= time && !proc[i].is_completed && proc[i].burst_time < min_burst_time) {
-                min_burst_time = proc[i].burst_time;
+    while(completed!=n){
+        int min_time = 100000000;
+        min_index = -1;
+
+        for(int i=0;i<n;i++){
+            if(proc[i].arrival <= time && !proc[i].is_done && proc[i].burst <= min_time){
                 min_index = i;
+                min_time = proc[i].burst;
             }
         }
 
-        if (min_index == -1) {
+        if(min_index == -1){
             time++;
             continue;
         }
 
-        time += proc[min_index].burst_time;
-        proc[min_index].completion_time = time;
-        proc[min_index].turnaround_time = proc[min_index].completion_time - proc[min_index].arrival_time;
-        proc[min_index].waiting_time = proc[min_index].turnaround_time - proc[min_index].burst_time;
-        proc[min_index].is_completed = 1;
+        time = time + proc[min_index].burst;
+        proc[min_index].completion = time; //end time
+        proc[min_index].wait = time - proc[min_index].burst - proc[min_index].arrival; //arrival
+        proc[min_index].turnaround = proc[min_index].wait + proc[min_index].burst; //turnaround
+        proc[min_index].is_done = 1;
         completed++;
     }
 }
 
-void print_table(struct Process proc[], int n) {
-    printf("\nPID\tArrival\tBurst\tCompletion\tTurnaround\tWaiting\n");
-    for (int i = 0; i < n; i++) {
-        printf("%d\t%d\t%d\t%d\t\t%d\t\t%d\n",proc[i].pid,proc[i].arrival_time,proc[i].burst_time,proc[i].completion_time,proc[i].turnaround_time, proc[i].waiting_time);
+void print(struct process proc[],int n){
+    int totalwait=0,totalturn=0,avgwait,avgturn;
+    for(int i=0;i<n;i++){
+        totalwait = totalwait + proc[i].wait;
+        totalturn = totalturn + proc[i].turnaround;
     }
+
+    avgwait = totalwait/n;
+    avgturn = totalturn/n;
+    
+    printf("Average Waiting time is: %d\n",avgwait);
+    printf("Average turnaround time is: %d\n",avgturn);
+
+    printf("PID\t\tArrival\t\tBurst\t\tCompletion\tWait\t\tTurnaround\n");
+    for(int i=0;i<n;i++){
+        printf("%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n",proc[i].pid,proc[i].arrival,proc[i].burst,proc[i].completion,proc[i].wait,proc[i].turnaround);
+    }   
 }
 
 int main() {
@@ -50,20 +62,22 @@ int main() {
 
     printf("Enter the number of processes: ");
     scanf("%d", &n);
+    printf("\n");
 
-    struct Process proc[n];
+    struct process proc[n];
 
     for (int i = 0; i < n; i++) {
         proc[i].pid = i + 1;
         printf("Enter arrival time for process %d: ", proc[i].pid);
-        scanf("%d", &proc[i].arrival_time);
+        scanf("%d", &proc[i].arrival);
         printf("Enter burst time for process %d: ", proc[i].pid);
-        scanf("%d", &proc[i].burst_time);
-        proc[i].is_completed = 0;
+        scanf("%d", &proc[i].burst);
+        proc[i].is_done = 0;
+        printf("\n");
     }
 
-    calculate_times(proc, n);
-    print_table(proc, n);
+    calc(proc, n);
+    print(proc, n);
 
     return 0;
 }
